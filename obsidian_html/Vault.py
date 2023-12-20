@@ -1,6 +1,7 @@
 import os
-from .utils import find_files, slug_case, find_backlinks, md_link
-from .format import htmlify
+import shutil
+from utils import find_files, slug_case, find_backlinks, md_link
+from format import htmlify
 
 
 class Vault:
@@ -12,7 +13,7 @@ class Vault:
 
         self.html_template = html_template
         if html_template:
-            with open(html_template) as f:
+            with open(html_template, encoding='utf-8') as f:
                 self.html_template = f.read()
 
     def _add_backlinks(self):
@@ -24,16 +25,42 @@ class Vault:
                     note["content"] += f"- {md_link(backlink['text'], backlink['link'])}\n"
                 note["content"] += "</div>"
 
+    def directory_depth_to_root(self, path):
+        # Count the number of forward slashes in the path
+        depth = path.count('\\')
+        
+        # Generate the string with "../" repeated for each depth level
+        return '../' * depth if depth > 0 else './'  # './' represents the current directory
+
     def convert_to_html(self):
         notes_html = []
         for note in self.notes:
-            filename_html = slug_case(note["filename"]) + ".html"
+            filename_html = note["filename"] + ".html"
             content_html = htmlify(note["content"])
 
             notes_html.append(
                 {"filename": filename_html, "content": content_html, "title": note["filename"]})
 
         return notes_html
+
+    def copy_files(self, src_dir, dest_dir):
+        for root, dirs, files in os.walk(src_dir):
+            # Calculate the relative path from the source directory
+            relative_path = os.path.relpath(root, src_dir)
+            # Create the corresponding directory in the destination
+            dest_path = os.path.join(dest_dir, relative_path)
+            if not os.path.exists(dest_path):
+                os.makedirs(dest_path)
+    
+            for file in files:
+                # Skip files ending with .md
+                if file.endswith('.md'):
+                    continue
+    
+                # Copy the file to the new location
+                src_file = os.path.join(root, file)
+                dest_file = os.path.join(dest_path, file)
+                shutil.copy(src_file, dest_file)
 
     def export_html(self, out_dir):
         # Default location of exported HTML is "html"
@@ -54,5 +81,18 @@ class Vault:
                     title=note["title"], content=note["content"])
             else:
                 html = note["content"]
-            with open(os.path.join(out_dir, note["filename"]), "w") as f:
+            
+            # Create the directory if it doesn't exist
+            output_path = os.path.join(out_dir, note["filename"])
+            output_path = output_path.replace(self.vault_root, "", 1)
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            
+            file_path_encoded = os.path.join(out_dir, note["filename"]).encode('utf-8', 'replace').decode('utf-8')
+            
+            # TODO: Support both Windows & UNIX file structures
+            file_path_encoded = file_path_encoded.replace("/", "\\")
+            
+            with open(file_path_encoded, "w", encoding='utf-8') as f:
                 f.write(html)
+            
+        self.copy_files(self.vault_root, out_dir)

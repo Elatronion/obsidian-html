@@ -1,6 +1,6 @@
 import regex as re
 import markdown2
-from .utils import slug_case, md_link
+from utils import slug_case, md_link
 
 
 def format_internal_links(document):
@@ -49,7 +49,22 @@ def obsidian_to_commonmark_links(document, matches, no_groups=2):
     return document
 
 
+def convert_md_links_to_html(text):
+    """
+    Finds markdown links that link to other markdown files and replaces the `.md` extension with `.html`.
+    """
+    md_link_pattern = r"\[([^\]]+)\]\(([^\)]+\.md)\)"
+    def replace_md_with_html(match):
+        link_text = match.group(1)
+        md_link = match.group(2).replace('.md', '.html')
+        return f"[{link_text}]({md_link})"
+    return re.sub(md_link_pattern, replace_md_with_html, text)
+
+
 def htmlify(document):
+    # Convert .md links to .html
+    document = convert_md_links_to_html(document)
+    
     # Formatting of Obsidian tags and links.
     document = format_tags(
         format_internal_header_links(
@@ -80,10 +95,19 @@ def htmlify(document):
         # Disable formatting via the _ character. Necessary for code an TeX
         "code-friendly",
         # Support for Obsidian's footnote syntax
-        "footnotes"
+        "footnotes",
+        "link-patterns"
     ]
+    
+    # Define a regular expression pattern for URLs
+    url_pattern = re.compile(
+        r"(http[s]?://\S+)", re.IGNORECASE
+    )
 
-    html = markdown2.markdown(document, extras=markdown2_extras)
+    # Define the link pattern to use with the markdown2 converter
+    link_patterns = [(url_pattern, r"\1")]
+
+    html = markdown2.markdown(document, extras=markdown2_extras, link_patterns=link_patterns)
 
     # Wrapping converted markdown in a div for styling
     html = f"<div id=\"content\">{html}</div>"

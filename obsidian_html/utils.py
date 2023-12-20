@@ -1,5 +1,6 @@
 import regex as re
 import os
+import sys
 
 
 def slug_case(text):
@@ -14,7 +15,12 @@ def md_link(text, link):
 
 def find_files(vault_root, extra_folders, no_extension=False):
     # Find all markdown-files in vault root.
-    md_files = find_md_files(vault_root, no_extension)
+    md_files = []
+    
+    for root, dirs, files in os.walk(vault_root):
+        for directory in dirs:
+            #print(os.path.join(root, directory))
+            md_files += find_md_files(os.path.join(root, directory), no_extension, is_extra_folder=False)
 
     # Find all markdown-files in each extra folder.
     for folder in extra_folders:
@@ -30,7 +36,7 @@ def find_md_files(root, no_extension, is_extra_folder=False):
         if not md_file.endswith(".md"):
             continue
 
-        with open(os.path.join(root, md_file)) as f:
+        with open(os.path.join(root, md_file), encoding='utf-8') as f:
             content = f.read()
 
         if no_extension:
@@ -38,7 +44,14 @@ def find_md_files(root, no_extension, is_extra_folder=False):
 
         if is_extra_folder:
             md_file = os.path.join(os.path.split(root)[-1], md_file)
-
+        
+        # TODO: Support both Windows & UNIX file structures
+        md_file = root + "\\" + md_file
+        md_file = md_file.replace("../", "")
+        # Split the path into parts
+        parts = md_file.split('\\')
+        # Remove the first directory and rejoin the remaining parts
+        md_file = '\\'.join(parts[1:])
         md_files.append({"filename": md_file, "content": content})
 
     return md_files
