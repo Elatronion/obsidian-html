@@ -4,21 +4,17 @@ This is a short Python script to convert an [Obsidian](https://obsidian.md/) vau
 
 ## Installation
 
-Install `obsidian-html` by running:
-
-    sudo pip install git+https://github.com/kmaasrud/obsidian-html.git
-
-Or doing the same (without the `sudo`) as an administrator on Windows.
-
-> Admin privileges is needed to ensure that the script is in the PATH. You can easily clone this repo and install the package locally with `pip install .` or `python setup.py develop`, if you do not want to install as admin.
+```
+pip install -r requirements.txt
+```
 
 ## Usage
 
-`obsidian-html` will by default convert all the Markdown documents in the folder you're running it in, and place the HTML files in a directory called `html`. You might not want to run it directly in your vault or place the converted files in another directory. This is specified by this syntax:
+`obsidian-html` will by default convert all the Markdown documents in the folder you're running it in recursively, and place the HTML files in a directory called `html`. It will also copy all other files to this new directory following the same structure as it's source. You might not want to run it directly in your vault or place the converted files in another directory. This is specified by this syntax:
 
     obsidian-html <path to vault> -o <path to html files>
 
-The script will only convert the files located directly in the directory specified and never work recursively. To specify subfolders, these must be supplied to the `-d` flag, like in this example:
+Any extra directories may be supplied to the `-d` flag, like in this example:
 
     obsidian-html <vault> -d "Daily notes" "Zettels"
 
@@ -28,7 +24,7 @@ The output is not very exiting from the get-go. It needs some style and structur
 
     obsidian-html <vault> -t template.html
 
-Here you can add metadata, link to CSS-files and add unified headers/footers to all the pages. [Here's](https://github.com/kmaasrud/brain/blob/master/template.html) an example of how I use the template function on my own hosted vault.
+Here you can add metadata, link to CSS-files and add unified headers/footers to all the pages.
 
 ### TeX support via KaTeX
 
@@ -128,10 +124,8 @@ Make a GitHub Actions workflow using the YAML below, and your vault will be publ
 
 ## To do
 
-- [ ] Support local attachments
-- [ ] Support the `![[]]` embedding syntax (perhaps using iframe or some similar method)
-- [ ] Support extra features added by the user through YAML metadata
+- [ ] Support the `[[]]` embedding syntax
 
 ## Known issues
 
-- Links in headers lead to weird header ids, and thus malfunctioning header links from other pages.
+- Windows & Linux weirdness with paths
